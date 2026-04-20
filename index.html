@@ -1,238 +1,41 @@
-<!DOCTYPE html><html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invoice 630</title><style>
-body {
-  font-family: Arial;
-  background: #e6e6e6;
-  margin: 0;
-}
+HTML
+<script>
+function generateInvoice() {
+    const text = document.querySelector("textarea").value;
 
-/* APP INPUT */
-.app {
-  padding: 10px;
-}
-textarea, button {
-  width: 100%;
-  margin-bottom: 8px;
-  padding: 10px;
-}
+    const lines = text.split("\n");
 
-/* INVOICE SHEET */
-.invoice {
-  width: 820px;
-  margin: 20px auto;
-  background: white;
-  border: 2px solid black;
-  padding: 10px;
-}
+    let subtotal = 0;
+    let tableHTML = "";
 
-/* TOP HEADER */
-.topbar {
-  font-weight: bold;
-  font-size: 14px;
-}
+    lines.forEach(line => {
+        // Match YOUR format: Qty EA Price Total
+        let match = line.match(/(\d+\.?\d*)\s+EA\s+(\d+\.?\d*)\s+(\d+\.?\d*)/);
 
-/* BLUE STRIP */
-.blue {
-  background: #3b5998;
-  color: white;
-  padding: 4px;
-  font-size: 12px;
-  margin-top: 5px;
-}
+        if (match) {
+            let qty = parseFloat(match[1]);
+            let price = parseFloat(match[2]);
+            let total = parseFloat(match[3]);
 
-/* GRID LAYOUT */
-.row {
-  display: flex;
-  justify-content: space-between;
-}
+            subtotal += total;
 
-.left, .right {
-  width: 48%;
-}
-
-/* BOXES */
-.box {
-  border: 2px solid black;
-  padding: 5px;
-  margin-top: 5px;
-  font-size: 12px;
-}
-
-/* RIGHT SMALL BOXES */
-.smallbox {
-  border: 2px solid black;
-  height: 40px;
-  margin-bottom: 5px;
-}
-
-/* TABLE */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  font-size: 12px;
-}
-
-th, td {
-  border: 1px solid black;
-  padding: 4px;
-}
-
-th {
-  background: #3b5998;
-  color: white;
-}
-
-.blank-row td {
-  height: 16px;
-}
-
-/* TOTALS */
-.bottom {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 15px;
-}
-
-.message {
-  width: 50%;
-  border: 2px solid black;
-  height: 80px;
-}
-
-.totals {
-  width: 40%;
-  font-size: 12px;
-}
-
-.totals div {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 3px;
-}
-
-/* FOOTER */
-.footer {
-  margin-top: 10px;
-  border: 2px solid black;
-  padding: 5px;
-  font-size: 11px;
-}
-
-/* PRINT */
-@media print {
-  textarea, button { display: none; }
-  body { background: white; }
-}
-</style></head><body><div class="app">
-<textarea id="input" placeholder="Paste PO here..."></textarea>
-<button onclick="processPO()">Generate Invoice</button>
-<button onclick="window.print()">Print / Save PDF</button><div class="invoice"><div class="topbar">
-AMR CUT & MAKE TEXTILE LIMITED
-</div><div class="blue">
-Invoice No: ______ | Date: ______ | Terms: 30 Days
-</div><div class="row"><div class="left">
-<div class="box">
-PLATT & HILL LIMITED<br>
-Belgraw Mill<br>
-Fitton Hill Rd<br>
-Oldham<br>
-OL8 2LZ
-</div>
-</div><div class="right">
-<div class="smallbox"></div>
-<div class="smallbox"></div>
-<div class="smallbox"></div>
-<div class="smallbox"></div>
-</div></div><table id="items">
-<thead>
-<tr>
-<th>Description</th>
-<th>Qty</th>
-<th>Price</th>
-<th>Total</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table><div class="bottom">
-<div class="message"></div><div class="totals">
-<div><span>Subtotal</span><span id="net">0.00</span></div>
-<div><span>VAT</span><span id="vat">0.00</span></div>
-<div><b>Total</b><span id="grand">0.00</span></div>
-</div>
-</div><div class="footer">
-Company Details<br>
-VAT No: ______ | Tel: ______<br>
-Payment Details<br>
-Sort Code: ______ | Account: ______
-</div></div>
-</div><script>
-function processPO() {
-  const text = document.getElementById("input").value;
-  const lines = text.split("\n");
-
-  let data = {};
-  let net = 0;
-
-  lines.forEach(line => {
-    line = line.trim();
-
-    const codeMatch = line.match(/(CVFB\d+)/);
-
-    if (codeMatch) {
-      const code = codeMatch[1];
-
-      const nums = line.replace(/[^0-9.\- ]/g, "").split(" ").filter(n => n !== "").map(Number);
-
-      if (nums.length >= 3) {
-        const qty = nums[0];
-        const price = nums[1];
-        const total = nums[nums.length - 1];
-
-        if (!data[code]) {
-          data[code] = { qty: 0, total: 0, price: price };
+            tableHTML += `
+                <tr>
+                    <td>-</td>
+                    <td>${qty}</td>
+                    <td>£${price.toFixed(2)}</td>
+                    <td>£${total.toFixed(2)}</td>
+                </tr>
+            `;
         }
+    });
 
-        data[code].qty += qty;
-        data[code].total += total;
-      }
-    }
-  });
+    const vat = subtotal * 0.20;
+    const grandTotal = subtotal + vat;
 
-  const tbody = document.querySelector("#items tbody");
-  tbody.innerHTML = "";
-
-  for (let code in data) {
-    const row = data[code];
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${code}</td>
-      <td>${row.qty}</td>
-      <td>${row.price.toFixed(3)}</td>
-      <td>${row.total.toFixed(2)}</td>
-    `;
-    tbody.appendChild(tr);
-
-    net += row.total;
-  }
-
-  // Fill empty rows to match Excel look
-  for (let i = 0; i < 40; i++) {
-    const tr = document.createElement("tr");
-    tr.className = "blank-row";
-    tr.innerHTML = "<td></td><td></td><td></td><td></td>";
-    tbody.appendChild(tr);
-  }
-
-  const vat = net * 0.2;
-  const grand = net + vat;
-
-  document.getElementById("net").innerText = net.toFixed(2);
-  document.getElementById("vat").innerText = vat.toFixed(2);
-  document.getElementById("grand").innerText = grand.toFixed(2);
+    document.querySelector("#items").innerHTML = tableHTML;
+    document.querySelector("#subtotal").innerText = "£" + subtotal.toFixed(2);
+    document.querySelector("#vat").innerText = "£" + vat.toFixed(2);
+    document.querySelector("#total").innerText = "£" + grandTotal.toFixed(2);
 }
-</script></body>
-</html>
+</script>
