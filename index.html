@@ -1,0 +1,181 @@
+<!DOCTYPE html><html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice App</title><style>
+body {
+  font-family: Arial;
+  margin: 0;
+  background: #f2f4f8;
+}
+
+.header {
+  background: #1e293b;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.container {
+  padding: 15px;
+}
+
+textarea {
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.btn {
+  width: 100%;
+  padding: 15px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.generate {
+  background: #2563eb;
+  color: white;
+}
+
+.clear {
+  background: #ef4444;
+  color: white;
+}
+
+.invoice {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  margin-top: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th, td {
+  border-bottom: 1px solid #ddd;
+  padding: 6px;
+}
+
+th {
+  text-align: left;
+}
+
+.num {
+  text-align: right;
+}
+
+.totals {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.totals div {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.total-final {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+@media print {
+  textarea, button, .header { display: none; }
+}
+</style></head><body><div class="header">📦 Invoice Generator</div><div class="container"><textarea id="input" placeholder="Paste PO here..."></textarea><button class="btn generate" onclick="processPO()">Generate Invoice</button>
+<button class="btn clear" onclick="clearAll()">Clear</button>
+
+<div class="invoice"><table id="items">
+<thead>
+<tr>
+<th>Code</th>
+<th>Qty</th>
+<th>Price</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table><div class="totals">
+<div><span>Subtotal</span><span id="net"></span></div>
+<div><span>VAT (20%)</span><span id="vat"></span></div>
+<div class="total-final"><span>Total</span><span id="grand"></span></div>
+</div></div></div><script>
+function processPO() {
+  const text = document.getElementById("input").value;
+  const lines = text.split("\n");
+
+  let data = {};
+  let net = 0;
+
+  lines.forEach(line => {
+    line = line.trim();
+
+    if (line.startsWith("CVFB")) {
+      const parts = line.split(/\s+/);
+      const code = parts[0];
+
+      const nums = parts.filter(p => !isNaN(p)).map(Number);
+
+      if (nums.length >= 3) {
+        const qty = nums[0];
+        const price = nums[1];
+        const total = nums[2];
+
+        if (!data[code]) {
+          data[code] = { qty: 0, total: 0, price: price };
+        }
+
+        data[code].qty += qty;
+        data[code].total += total;
+      }
+    }
+  });
+
+  const tbody = document.querySelector("#items tbody");
+  tbody.innerHTML = "";
+
+  for (let code in data) {
+    const row = data[code];
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${code}</td>
+      <td class="num">${row.qty}</td>
+      <td class="num">${row.price.toFixed(3)}</td>
+      <td class="num">${row.total.toFixed(2)}</td>
+    `;
+    tbody.appendChild(tr);
+
+    net += row.total;
+  }
+
+  const vat = net * 0.2;
+  const grand = net + vat;
+
+  document.getElementById("net").innerText = "£" + net.toFixed(2);
+  document.getElementById("vat").innerText = "£" + vat.toFixed(2);
+  document.getElementById("grand").innerText = "£" + grand.toFixed(2);
+}
+
+function clearAll() {
+  document.getElementById("input").value = "";
+  document.querySelector("#items tbody").innerHTML = "";
+  document.getElementById("net").innerText = "";
+  document.getElementById("vat").innerText = "";
+  document.getElementById("grand").innerText = "";
+}
+</script></body>
+</html>
